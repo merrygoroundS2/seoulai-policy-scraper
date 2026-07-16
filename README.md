@@ -2,6 +2,12 @@
 
 서울AI플랫폼(seoulai.saif.or.kr)의 AI 정책 게시판에서 **"정부부처·청·위원회"** 범주의 기사를 매일 자동 수집하여 엑셀에 누적 저장하는 동향지 제작 지원 자동화 시스템입니다.
 
+## 🌐 원클릭 클라우드 배포 (배포링크 만들기)
+
+아래 버튼을 누르면 별도의 로컬 설치 없이 클라우드 서버(Render.com)에 즉시 배포되어, 다른 사람들과 함께 사용할 수 있는 **공유 배포링크(URL)**를 10초 만에 생성할 수 있습니다.
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/merrygoroundS2/seoulai-policy-scraper)
+
 ## ✨ 주요 기능
 
 | 기능 | 설명 |
