@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, BackgroundTasks, Request
+from fastapi import APIRouter, BackgroundTasks, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -341,3 +341,25 @@ async def get_logs(limit: int = 10):
     excel = ExcelManager()
     logs = excel.get_run_logs(limit=limit)
     return {"logs": logs, "count": len(logs)}
+
+
+@router.post("/api/session/upload")
+async def upload_session_file(file: UploadFile):
+    """storage_state.json 세션 파일을 직접 업로드하여 세션을 갱신한다 (클라우드 배포용)."""
+    try:
+        content = await file.read()
+        import json
+        data = json.loads(content.decode("utf-8"))
+        if "cookies" not in data:
+            return JSONResponse(status_code=400, content={"error": "유효하지 않은 storage_state 파일 형식입니다."})
+        
+        # 파일 저장
+        AUTH_STATE_FILEPATH.parent.mkdir(parents=True, exist_ok=True)
+        with open(AUTH_STATE_FILEPATH, "w", encoding="utf-8") as f:
+            f.write(content.decode("utf-8"))
+        
+        logger.info("대시보드를 통한 세션 상태 파일 업로드 완료")
+        return {"status": "success", "message": "세션 상태 파일 업로드 완료!"}
+    except Exception as e:
+        logger.error(f"세션 파일 업로드 실패: {e}")
+        return JSONResponse(status_code=500, content={"error": f"세션 업로드 실패: {str(e)}"})

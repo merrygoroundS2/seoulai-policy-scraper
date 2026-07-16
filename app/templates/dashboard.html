@@ -533,6 +533,9 @@
                 <input type="text" id="dashboardUsername" placeholder="ID 입력">
                 <input type="password" id="dashboardPassword" placeholder="PW 입력">
                 <button class="btn btn-secondary btn-sm" onclick="loginSession()">🔑 로그인 세션 저장</button>
+                <span style="color: var(--border-subtle); margin: 0 4px;">|</span>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('sessionStateUpload').click()">📤 세션 업로드</button>
+                <input type="file" id="sessionStateUpload" accept=".json" style="display: none;" onchange="uploadSessionFile(this)">
             </div>
             
             <span class="header-time" id="currentTime">{{ current_time }}</span>
@@ -963,6 +966,39 @@
                 url += `?start_date=${startD}&end_date=${endD}`;
             }
             window.location.href = url;
+        }
+
+        // 5. 세션 상태 파일 업로드
+        async function uploadSessionFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            document.getElementById('loadingOverlayText').innerText = '세션 파일을 업로드 중입니다...';
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const response = await fetch('/api/session/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('세션 상태 파일이 성공적으로 업로드되었습니다!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.error || '업로드 실패', 'error');
+                }
+            } catch (err) {
+                showToast('서버 통신 실패: ' + err.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                input.value = '';
+            }
         }
 
         // 토스트 팝업 헬퍼
