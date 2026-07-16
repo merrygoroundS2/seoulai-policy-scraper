@@ -27,6 +27,8 @@ env:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 30
 
     steps:
@@ -98,3 +100,12 @@ jobs:
         with:
           path: output/articles_daily.xlsx
           key: excel-${{ github.run_number }}
+
+      - name: Commit and Push Changes
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add output/articles_daily.xlsx output/articles.json
+          git commit -m "Auto-update: daily scraped articles" || echo "No changes to commit"
+          git push origin main

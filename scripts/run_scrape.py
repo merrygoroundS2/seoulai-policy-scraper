@@ -69,6 +69,23 @@ async def main(target_date: str = None, fetch_body: bool = True):
     if result.errors:
         excel.save_error_log(result.errors)
 
+    # JSON 파일 업데이트 (GitHub Pages용)
+    try:
+        import json
+        import pandas as pd
+        if Path(excel.filepath).exists():
+            df = pd.read_excel(str(excel.filepath), sheet_name="raw_articles", engine="openpyxl")
+            df = df.fillna("")
+            articles_list = df.to_dict("records")
+            
+            # JSON 포맷 저장
+            json_path = Path(excel.filepath).parent / "articles.json"
+            with open(json_path, "w", encoding="utf-8") as f:
+                json.dump(articles_list, f, ensure_ascii=False, indent=2)
+            logger.info(f"GitHub Pages용 JSON 저장 완료: {json_path}")
+    except Exception as e:
+        logger.error(f"articles.json 변환/저장 실패: {e}")
+
     # 결과 출력
     print()
     print("─" * 40)

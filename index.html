@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 정책 기사 스크랩 동향지</title>
+    <meta name="description" content="서울AI플랫폼 AI 정책 기사 자동 수집 동향지">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            100: '#0f111a',
+                            200: '#151824',
+                            300: '#1d2030',
+                            400: '#25293e'
+                        },
+                        accent: {
+                            purple: '#8b5cf6',
+                            indigo: '#6366f1'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+    </style>
+</head>
+<body class="bg-dark-100 text-slate-100 min-height-screen font-sans flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-dark-200 border-b border-white/5 sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-accent-indigo to-accent-purple flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-indigo-500/25">
+                    AI
+                </div>
+                <h1 class="text-lg font-semibold tracking-tight">
+                    <span class="text-indigo-400 font-bold">AI 정책</span> 동향지 자동 스크랩
+                </h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <a id="btnDownload" href="output/articles_daily.xlsx" download class="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-accent-indigo to-accent-purple hover:from-indigo-500 hover:to-purple-600 active:scale-95 text-white text-xs font-semibold rounded-lg shadow-lg shadow-indigo-500/20 transition-all duration-200">
+                    <span>📥 전체 엑셀 다운로드</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <!-- Dashboard Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-dark-200 border border-white/5 rounded-2xl p-6 shadow-xl relative overflow-hidden group hover:border-indigo-500/30 transition-all duration-300">
+                <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+                <h3 class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">총 수집된 AI 기사</h3>
+                <div class="text-3xl font-bold font-mono text-white" id="statTotalCount">0</div>
+                <p class="text-xs text-slate-500 mt-2">정부부처·청·위원회 카테고리 기사</p>
+            </div>
+            
+            <div class="bg-dark-200 border border-white/5 rounded-2xl p-6 shadow-xl relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+                <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-emerald-500 to-teal-500"></div>
+                <h3 class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">최근 업데이트 게시일</h3>
+                <div class="text-2xl font-bold text-white mt-1" id="statLastUpdate">-</div>
+                <p class="text-xs text-slate-500 mt-2">매일 아침 자동 스크랩 갱신</p>
+            </div>
+
+            <div class="bg-dark-200 border border-white/5 rounded-2xl p-6 shadow-xl relative overflow-hidden group hover:border-purple-500/30 transition-all duration-300">
+                <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-purple-500 to-pink-500"></div>
+                <h3 class="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">자동화 상태</h3>
+                <div class="flex items-center space-x-2 mt-2">
+                    <span class="relative flex h-2.5 w-2.5">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </span>
+                    <span class="text-sm font-semibold text-emerald-400">매일 오전 08:00 실행 중</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-2">GitHub Actions 자동 크론탭 가동</p>
+            </div>
+        </div>
+
+        <!-- Filter and Search -->
+        <div class="bg-dark-200 border border-white/5 rounded-2xl p-5 mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-3">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">필터링:</span>
+                <input type="date" id="filterStartDate" class="bg-dark-300 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500 transition-colors" title="시작일">
+                <span class="text-xs text-slate-500">~</span>
+                <input type="date" id="filterEndDate" class="bg-dark-300 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-slate-200 outline-none focus:border-indigo-500 transition-colors" title="종료일">
+                <button onclick="applyDateFilter()" class="px-3.5 py-1.5 bg-dark-300 hover:bg-dark-400 border border-white/10 text-xs font-semibold rounded-lg text-slate-200 active:scale-95 transition-all duration-200">적용</button>
+                <button onclick="resetDateFilter()" class="px-3.5 py-1.5 bg-transparent hover:bg-white/5 text-xs font-semibold rounded-lg text-slate-400 active:scale-95 transition-all duration-200">초기화</button>
+            </div>
+            <div class="relative w-full md:w-72">
+                <input type="text" id="searchInput" oninput="searchArticles()" placeholder="기사 제목, 기관명 검색..." class="w-full bg-dark-300 border border-white/10 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-200 outline-none focus:border-indigo-500 transition-colors">
+                <span class="absolute left-3 top-2.5 text-slate-500">🔍</span>
+            </div>
+        </div>
+
+        <!-- Articles Table -->
+        <div class="bg-dark-200 border border-white/5 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="px-6 py-5 border-b border-white/5 flex items-center justify-between">
+                <h2 class="text-sm font-semibold flex items-center space-x-2">
+                    <span>📰 수집 기사 목록</span>
+                    <span id="listCountBadge" class="bg-indigo-500/10 text-indigo-400 text-xs px-2.5 py-0.5 rounded-full font-bold">0건</span>
+                </h2>
+                <div class="text-xs text-slate-400" id="filterStatusText">최근 수집 내역</div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-white/[0.02] border-b border-white/5">
+                            <th class="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">제목</th>
+                            <th class="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">발행 기관</th>
+                            <th class="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">게시일</th>
+                            <th class="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">핵심 키워드</th>
+                            <th class="px-6 py-3.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">AI 관련도</th>
+                        </tr>
+                    </thead>
+                    <tbody id="articlesTableBody" class="divide-y divide-white/5">
+                        <!-- Loading indicator -->
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center text-slate-500 text-xs">
+                                <div class="inline-block w-6 h-6 border-2 border-t-indigo-500 border-white/10 rounded-full animate-spin mb-2"></div>
+                                <div>기사 데이터를 불러오는 중입니다...</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark-200 border-t border-white/5 py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
+            &copy; 2026 AI 정책 기사 자동 스크랩 시스템. Powered by GitHub Pages.
+        </div>
+    </footer>
+
+    <!-- JS Logic -->
+    <script>
+        let allArticles = [];
+        let filteredArticles = [];
+
+        // Load data from output/articles.json
+        window.addEventListener('DOMContentLoaded', async () => {
+            try {
+                const response = await fetch('output/articles.json');
+                if (!response.ok) throw new Error('JSON load failed');
+                
+                allArticles = await response.json();
+                
+                // Sort by publish date (newest first)
+                allArticles.sort((a, b) => {
+                    const dateA = a['게시일'] || '';
+                    const dateB = b['게시일'] || '';
+                    return dateB.localeCompare(dateA);
+                });
+
+                filteredArticles = [...allArticles];
+                
+                updateStats();
+                renderArticles();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('articlesTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-rose-400 text-xs">
+                            ⚠️ 데이터를 불러오는데 실패했습니다. 기사가 아직 수집되지 않았거나 JSON 파일이 비어있습니다.
+                        </td>
+                    </tr>
+                `;
+            }
+        });
+
+        function updateStats() {
+            document.getElementById('statTotalCount').textContent = allArticles.length;
+            
+            if (allArticles.length > 0) {
+                const dates = allArticles.map(a => a['게시일']).filter(Boolean);
+                if (dates.length > 0) {
+                    const latestDate = dates.reduce((a, b) => a > b ? a : b);
+                    document.getElementById('statLastUpdate').textContent = latestDate;
+                }
+            }
+        }
+
+        function renderArticles() {
+            const tbody = document.getElementById('articlesTableBody');
+            document.getElementById('listCountBadge').textContent = `${filteredArticles.length}건`;
+
+            if (filteredArticles.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500 text-xs">
+                            📭 표시할 기사가 없습니다. 검색어나 필터 날짜를 확인하세요.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = filteredArticles.map(article => {
+                const score = parseFloat(article['AI관련도'] || 0);
+                let scoreBadge = '';
+                if (score > 0.5) {
+                    scoreBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-500/10 text-emerald-400">${score.toFixed(3)}</span>`;
+                } else if (score > 0.2) {
+                    scoreBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-indigo-500/10 text-indigo-400">${score.toFixed(3)}</span>`;
+                } else {
+                    scoreBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-slate-500/10 text-slate-400">${score.toFixed(3)}</span>`;
+                }
+
+                const url = article['상세URL'] || '';
+                const titleHtml = url && url !== 'nan'
+                    ? `<a href="${url}" target="_blank" class="hover:text-indigo-400 hover:underline transition duration-150 line-clamp-2">${article['제목'] || '-'}</a>`
+                    : `<span class="line-clamp-2">${article['제목'] || '-'}</span>`;
+
+                return `
+                    <tr class="hover:bg-white/[0.01] transition-colors">
+                        <td class="px-6 py-4 text-xs font-medium text-slate-200 max-w-lg">${titleHtml}</td>
+                        <td class="px-6 py-4 text-xs text-slate-300 whitespace-nowrap">${article['기관명'] || '-'}</td>
+                        <td class="px-6 py-4 text-xs text-slate-400 whitespace-nowrap">${article['게시일'] || '-'}</td>
+                        <td class="px-6 py-4 text-xs text-slate-400 max-w-[200px] truncate" title="${article['키워드'] || ''}">${article['키워드'] || '-'}</td>
+                        <td class="px-6 py-4 text-xs whitespace-nowrap">${scoreBadge}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function searchArticles() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            filterAndRender(query);
+        }
+
+        function applyDateFilter() {
+            filterAndRender();
+        }
+
+        function resetDateFilter() {
+            document.getElementById('filterStartDate').value = '';
+            document.getElementById('filterEndDate').value = '';
+            filterAndRender();
+        }
+
+        function filterAndRender(query = '') {
+            const startD = document.getElementById('filterStartDate').value;
+            const endD = document.getElementById('filterEndDate').value;
+            const searchQuery = query || document.getElementById('searchInput').value.toLowerCase().trim();
+
+            filteredArticles = allArticles.filter(article => {
+                // Search query match
+                const title = (article['제목'] || '').toLowerCase();
+                const org = (article['기관명'] || '').toLowerCase();
+                const matchesSearch = title.includes(searchQuery) || org.includes(searchQuery);
+
+                // Date filter match
+                const pubDate = article['게시일'] || '';
+                let matchesDate = true;
+                if (startD) matchesDate = matchesDate && (pubDate >= startD);
+                if (endD) matchesDate = matchesDate && (pubDate <= endD);
+
+                return matchesSearch && matchesDate;
+            });
+
+            // Update badge text
+            const statusText = document.getElementById('filterStatusText');
+            if (startD || endD || searchQuery) {
+                statusText.textContent = '필터 적용됨';
+                statusText.className = 'text-xs text-indigo-400 font-semibold';
+            } else {
+                statusText.textContent = '최근 수집 내역';
+                statusText.className = 'text-xs text-slate-400';
+            }
+
+            renderArticles();
+        }
+    </script>
+</body>
+</html>
