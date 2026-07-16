@@ -1,0 +1,100 @@
+# GitHub Actions — AI 정책 기사 자동 스크랩
+#
+# 매일 오전 8시(KST, UTC 23:00 전날)에 수집을 실행한다.
+# 수집된 엑셀 파일은 GitHub Artifact로 업로드된다.
+#
+# 주의: GitHub Actions에서 Playwright 실행 시 headless 모드 필수.
+# 엑셀 파일 영속성을 위해 별도 스토리지(S3, GCS 등) 연동 권장.
+
+name: Daily Article Scrape
+
+on:
+  schedule:
+    # UTC 23:00 = KST 08:00 (다음날)
+    - cron: '0 23 * * *'
+
+  # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '수집 대상 날짜 (YYYY-MM-DD, 빈칸이면 오늘)'
+        required: false
+        default: ''
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+
+      - name: Create .env
+        run: |
+          cat << EOF > .env
+          SEOULAI_LOGIN_ID=${{ secrets.SEOULAI_LOGIN_ID }}
+          SEOULAI_LOGIN_PW=${{ secrets.SEOULAI_LOGIN_PW }}
+          HEADLESS=true
+          TIMEZONE=Asia/Seoul
+          EOF
+
+      - name: Restore Session State
+        uses: actions/cache@v4
+        with:
+          path: auth/storage_state.json
+          key: session-state-${{ github.run_number }}
+          restore-keys: |
+            session-state-
+
+      - name: Restore Excel File
+        uses: actions/cache@v4
+        with:
+          path: output/articles_daily.xlsx
+          key: excel-${{ github.run_number }}
+          restore-keys: |
+            excel-
+
+      - name: Run Scrape
+        run: |
+          if [ -n "${{ github.event.inputs.target_date }}" ]; then
+            python scripts/run_scrape.py --date "${{ github.event.inputs.target_date }}"
+          else
+            python scripts/run_scrape.py
+          fi
+
+      - name: Upload Excel Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: articles-${{ github.run_number }}
+          path: output/articles_daily.xlsx
+          retention-days: 90
+
+      - name: Save Session State
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: auth/storage_state.json
+          key: session-state-${{ github.run_number }}
+
+      - name: Save Excel Cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: output/articles_daily.xlsx
+          key: excel-${{ github.run_number }}

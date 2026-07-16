@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 정책 기사 스크랩 대시보드</title>
+    <meta name="description" content="서울AI플랫폼 AI 정책 기사 자동 수집 관리 대시보드">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════
+           Design System — Dark Premium Dashboard
+           ═══════════════════════════════════════════ */
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #1a1d29;
+            --bg-card: #1e2130;
+            --bg-card-hover: #252840;
+            --border-subtle: rgba(255, 255, 255, 0.06);
+            --border-accent: rgba(99, 102, 241, 0.3);
+            --text-primary: #f1f3f9;
+            --text-secondary: #8b8fa3;
+            --text-muted: #5a5e72;
+            --accent-primary: #6366f1;
+            --accent-primary-hover: #818cf8;
+            --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --success: #10b981;
+            --success-bg: rgba(16, 185, 129, 0.1);
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+            --error: #ef4444;
+            --error-bg: rgba(239, 68, 68, 0.1);
+            --info: #3b82f6;
+            --info-bg: rgba(59, 130, 246, 0.1);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+            --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans KR', 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ── Header ── */
+        .header {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 0 2rem;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-logo {
+            width: 36px;
+            height: 36px;
+            background: var(--accent-gradient);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .header-title span {
+            color: var(--accent-primary);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        /* ── Dashboard Login Inline ── */
+        .login-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .login-bar input {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+            width: 110px;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .login-bar input:focus {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 8px rgba(99, 102, 241, 0.2);
+        }
+
+        .header-time {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            font-family: inherit;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:active { transform: translateY(0); }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-accent);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* ── Main Layout ── */
+        .main { padding: 1.5rem 2rem 3rem; max-width: 1440px; margin: 0 auto; }
+
+        /* ── Status Cards ── */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+        }
+
+        .status-card:nth-child(1)::before { background: var(--accent-gradient); }
+        .status-card:nth-child(2)::before { background: linear-gradient(135deg, #10b981, #34d399); }
+        .status-card:nth-child(3)::before { background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+        .status-card:nth-child(4)::before { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+
+        .status-card:hover {
+            border-color: var(--border-accent);
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .status-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .status-value {
+            font-size: 26px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .status-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ── Action Bar (Scrape & Filter Range) ── */
+        .action-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .action-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-primary);
+        }
+
+        .panel-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .date-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            flex-grow: 1;
+        }
+
+        .date-input-group input[type="date"] {
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .date-input-group span {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        /* ── Badge ── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success { background: var(--success-bg); color: var(--success); }
+        .badge-warning { background: var(--warning-bg); color: var(--warning); }
+        .badge-error { background: var(--error-bg); color: var(--error); }
+        .badge-info { background: var(--info-bg); color: var(--info); }
+
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Section ── */
+        .section {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title .icon { font-size: 18px; }
+
+        /* ── Table ── */
+        .table-container { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-subtle);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+        td a {
+            color: var(--accent-primary-hover);
+            text-decoration: none;
+        }
+
+        td a:hover { text-decoration: underline; }
+
+        .td-title {
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .td-keywords {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+
+        /* ── Loading Overlay ── */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 17, 23, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .loading-overlay.active { display: flex; }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid var(--border-subtle);
+            border-top-color: var(--accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* ── Toast Notification ── */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            z-index: 1001;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success { background: #065f46; color: #d1fae5; border: 1px solid #10b981; }
+        .toast-error { background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444; }
+        .toast-info { background: #1e3a5f; color: #bfdbfe; border: 1px solid #3b82f6; }
+
+        /* ── Responsive ── */
+        @media (max-width: 1024px) {
+            .status-grid { grid-template-columns: repeat(2, 1fr); }
+            .action-container { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 768px) {
+            .header { padding: 0 1rem; height: auto; py: 10px; flex-direction: column; gap: 10px; align-items: flex-start; }
+            .main { padding: 1rem; }
+            .status-grid { grid-template-columns: 1fr; }
+            .header-title { font-size: 15px; }
+            .login-bar { width: 100%; justify-content: space-between; }
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+        /* ── 에러 로그 테이블 ── */
+        .error-text {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            color: var(--error);
+        }
+
+        /* ── 실행 로그 ── */
+        .log-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .log-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="header-left">
+            <div class="header-logo">AI</div>
+            <h1 class="header-title"><span>AI 정책</span> 기사 스크랩 대시보드</h1>
+        </div>
+        
+        <div class="header-right">
+            <!-- Web Session Login Control Panel -->
+            <div class="login-bar">
+                <input type="text" id="dashboardUsername" placeholder="ID 입력">
+                <input type="password" id="dashboardPassword" placeholder="PW 입력">
+                <button class="btn btn-secondary btn-sm" onclick="loginSession()">🔑 로그인 세션 저장</button>
+            </div>
+            
+            <span class="header-time" id="currentTime">{{ current_time }}</span>
+            {% if session_active %}
+            <span class="badge badge-success" id="sessionActiveBadge"><span class="badge-dot"></span> 세션 활성</span>
+            {% else %}
+            <span class="badge badge-warning" id="sessionActiveBadge"><span class="badge-dot"></span> 세션 없음</span>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Status Cards -->
+        <div class="status-grid">
+            <div class="status-card" id="cardLastRun">
+                <div class="status-label">마지막 실행</div>
+                <div class="status-value" style="font-size: 16px;" id="lastRunTime">{{ last_run_time }}</div>
+                <div class="status-sub">⏰ 다음 자동 수집: {{ next_schedule_time }}</div>
+            </div>
+            <div class="status-card" id="cardTodayCount">
+                <div class="status-label">오늘 AI 기사 수집</div>
+                <div class="status-value" id="todayCount">{{ today_count }}</div>
+                <div class="status-sub">AI 관련 기사만 필터링 저장</div>
+            </div>
+            <div class="status-card" id="cardSession">
+                <div class="status-label">세션 상태</div>
+                <div class="status-value" style="font-size: 18px;" id="sessionStatusText">
+                    {% if session_active %}
+                    <span class="badge badge-success" style="font-size: 14px;">✓ 활성</span>
+                    {% else %}
+                    <span class="badge badge-warning" style="font-size: 14px;">⚠ 비활성</span>
+                    {% endif %}
+                </div>
+                <div class="status-sub">storage_state.json</div>
+            </div>
+            <div class="status-card" id="cardStatus">
+                <div class="status-label">시스템 상태</div>
+                <div class="status-value" style="font-size: 18px;">
+                    {% if is_scraping %}
+                    <span class="badge badge-info" style="font-size: 14px;" id="systemStatusBadge"><span class="badge-dot"></span> 수집 중</span>
+                    {% else %}
+                    <span class="badge badge-success" style="font-size: 14px;" id="systemStatusBadge">✓ 대기 중</span>
+                    {% endif %}
+                </div>
+                <div class="status-sub">자동 수집 활성화됨</div>
+            </div>
+        </div>
+
+        <!-- Action Grid (Scrape Range / Filter Range) -->
+        <div class="action-container">
+            <!-- Scrape Range Panel -->
+            <div class="action-panel">
+                <div class="panel-title">🚀 AI 기사 수집 (제목+본문 AI 필터링 → 엑셀 누적)</div>
+                <div class="panel-row">
+                    <div class="date-input-group">
+                        <input type="date" id="scrapeStartDate" title="수집 시작일">
+                        <span>~</span>
+                        <input type="date" id="scrapeEndDate" title="수집 종료일">
+                    </div>
+                    <button class="btn btn-primary" id="btnScrape" onclick="startScrape()">수집 시작</button>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                    * 미지정 시 당일 기사만 수집을 진행합니다.
+                </div>
+            </div>
+
+            <!-- Filter Range Panel -->
+            <div class="action-panel">
+                <div class="panel-title">🔎 수집된 누적 기사 필터링 및 다운로드</div>
+                <div class="panel-row">
+                    <div class="date-input-group">
+                        <input type="date" id="filterStartDate" value="{{ start_date_val }}" title="조회 시작일">
+                        <span>~</span>
+                        <input type="date" id="filterEndDate" value="{{ end_date_val }}" title="조회 종료일">
+                    </div>
+                    <button class="btn btn-secondary" onclick="applyFilter()">적용</button>
+                    <button class="btn btn-secondary" onclick="resetFilter()">초기화</button>
+                    <button class="btn btn-primary" id="btnDownload" onclick="downloadExcel()">📥 다운로드</button>
+                </div>
+                <div style="font-size: 11px; color: var(--text-secondary); margin-top: 6px;">
+                    * 지정 시 해당 기간의 데이터만 조회 및 필터링된 엑셀로 내려받을 수 있습니다.
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Articles -->
+        <div class="section" id="articlesSection">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="icon">📰</span>
+                    기사 목록
+                    {% if start_date_val or end_date_val %}
+                    <span class="badge badge-info" style="font-size: 12px; margin-left: 10px;">필터링 적용됨</span>
+                    {% endif %}
+                </h2>
+                <span style="font-size: 13px; color: var(--text-secondary);">
+                    현재 화면 표시: {{ recent_articles|length }}건
+                </span>
+            </div>
+            <div class="table-container">
+                {% if recent_articles %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>제목</th>
+                            <th>기관</th>
+                            <th>게시일</th>
+                            <th>키워드</th>
+                            <th>AI 관련도</th>
+                            <th>수집일시</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for article in recent_articles %}
+                        <tr>
+                            <td class="td-title">
+                                {% if article.get('상세URL') and article['상세URL'] != 'nan' and article['상세URL'] != '' %}
+                                <a href="{{ article['상세URL'] }}" target="_blank" title="{{ article.get('제목', '') }}">
+                                    {{ article.get('제목', '-') }}
+                                </a>
+                                {% else %}
+                                {{ article.get('제목', '-') }}
+                                {% endif %}
+                            </td>
+                            <td>{{ article.get('기관명', '-') }}</td>
+                            <td>{{ article.get('게시일', '-') }}</td>
+                            <td class="td-keywords" title="{{ article.get('키워드', '') }}">
+                                {{ article.get('키워드', '-') }}
+                            </td>
+                            <td>
+                                {% set score = article.get('AI관련도', 0) %}
+                                {% if score is number and score > 0.5 %}
+                                <span class="badge badge-success">{{ '%.3f'|format(score) }}</span>
+                                {% elif score is number and score > 0.2 %}
+                                <span class="badge badge-info">{{ '%.3f'|format(score) }}</span>
+                                {% else %}
+                                <span class="badge badge-warning">{{ score }}</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 12px; color: var(--text-secondary);">
+                                {{ article.get('수집일시', '-')[:19] if article.get('수집일시') else '-' }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>표시할 기사가 없습니다.</p>
+                    <p style="font-size: 13px; margin-top: 4px;">지정한 기간에 수집된 기사가 없는지 확인하거나, 왼쪽 폼에서 기사 수집을 개시해 보세요.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Logs Grid -->
+        <div class="log-grid">
+            <!-- Run Logs -->
+            <div class="section" id="runLogSection">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="icon">📊</span>
+                        실행 이력
+                    </h2>
+                </div>
+                <div class="table-container">
+                    {% if run_logs %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>실행일시</th>
+                                <th>발견</th>
+                                <th>신규</th>
+                                <th>실패</th>
+                                <th>소요(초)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in run_logs %}
+                            <tr>
+                                <td style="font-size: 12px;">{{ log.get('실행일시', '-')[:19] if log.get('실행일시') else '-' }}</td>
+                                <td>{{ log.get('발견건수', 0) }}</td>
+                                <td><strong>{{ log.get('신규건수', 0) }}</strong></td>
+                                <td>
+                                    {% if log.get('실패건수', 0) > 0 %}
+                                    <span style="color: var(--error);">{{ log['실패건수'] }}</span>
+                                    {% else %}
+                                    0
+                                    {% endif %}
+                                </td>
+                                <td>{{ log.get('소요시간(초)', '-') }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">
+                        <p>실행 이력이 없습니다.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Error Logs -->
+            <div class="section" id="errorLogSection">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="icon">⚠️</span>
+                        에러 로그
+                    </h2>
+                </div>
+                <div class="table-container">
+                    {% if error_logs %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>시각</th>
+                                <th>제목</th>
+                                <th>에러</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for err in error_logs %}
+                            <tr>
+                                <td style="font-size: 12px;">{{ err.get('발생시각', '-')[:19] if err.get('발생시각') else '-' }}</td>
+                                <td class="td-title">{{ err.get('제목', '-') }}</td>
+                                <td class="error-text" title="{{ err.get('에러메시지', '') }}">
+                                    {{ err.get('에러메시지', '-') }}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <div class="empty-state">
+                        <p style="color: var(--success);">에러가 없습니다 ✓</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingOverlayText">기사 수집 중입니다...</div>
+        <div style="font-size: 13px; color: var(--text-secondary);">
+            이 작업은 수 초에서 수 분까지 소요될 수 있습니다. 브라우저를 닫지 마세요.
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ═══════════════════════════════════════════
+        // Dashboard JavaScript
+        // ═══════════════════════════════════════════
+
+        // 시간 자동 갱신
+        setInterval(() => {
+            const now = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('currentTime').textContent =
+                `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+        }, 1000);
+
+        // 1. 대시보드 로그인 API 연동
+        async function loginSession() {
+            const usernameInput = document.getElementById('dashboardUsername').value;
+            const passwordInput = document.getElementById('dashboardPassword').value;
+
+            if (!usernameInput || !passwordInput) {
+                showToast('로그인을 위해 아이디와 비밀번호를 모두 입력하세요.', 'error');
+                return;
+            }
+
+            document.getElementById('loadingOverlayText').innerText = '백그라운드에서 로그인을 시도 중입니다...';
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: usernameInput, password: passwordInput })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast('성공적으로 로그인되었으며 세션이 저장되었습니다!', 'success');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message || '로그인에 실패했습니다.', 'error');
+                }
+            } catch (err) {
+                showToast('서버 통신 실패: ' + err.message, 'error');
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('active');
+            }
+        }
+
+        // 2. 날짜 범위 지정 즉시 수집 실행
+        async function startScrape() {
+            const startD = document.getElementById('scrapeStartDate').value;
+            const endD = document.getElementById('scrapeEndDate').value;
+
+            // 시작일/종료일 검증
+            if ((startD && !endD) || (!startD && endD)) {
+                showToast('수집 기간 범위를 입력하려면 시작일과 종료일을 모두 채워주세요.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('btnScrape');
+            btn.disabled = true;
+            btn.innerHTML = '⏳ 수집 중...';
+
+            document.getElementById('loadingOverlayText').innerText = '기사를 수집 중입니다...';
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const res = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_date: startD || null, end_date: endD || null })
+                });
+                const data = await res.json();
+
+                if (res.status === 409) {
+                    showToast('이미 수집이 진행 중입니다.', 'info');
+                    document.getElementById('loadingOverlay').classList.remove('active');
+                    btn.disabled = false;
+                    btn.innerHTML = '수집 시작';
+                    return;
+                }
+
+                showToast('수집 요청이 접수되었습니다. 완료까지 기다려주세요.', 'info');
+                pollStatus();
+
+            } catch (err) {
+                showToast('수집 요청 실패: ' + err.message, 'error');
+                document.getElementById('loadingOverlay').classList.remove('active');
+                btn.disabled = false;
+                btn.innerHTML = '수집 시작';
+            }
+        }
+
+        // 수집 상태 폴링
+        let pollCount = 0;
+        function pollStatus() {
+            pollCount = 0;
+            const interval = setInterval(async () => {
+                pollCount++;
+                try {
+                    const res = await fetch('/api/status');
+                    const data = await res.json();
+
+                    if (!data.is_scraping) {
+                        clearInterval(interval);
+                        document.getElementById('loadingOverlay').classList.remove('active');
+
+                        const btn = document.getElementById('btnScrape');
+                        btn.disabled = false;
+                        btn.innerHTML = '수집 시작';
+
+                        if (data.last_result && data.last_result.status === 'completed') {
+                            const r = data.last_result;
+                            const filtered = (r.filtered_title || 0) + (r.filtered_score || 0);
+                            showToast(
+                                `수집 완료! AI 기사 ${r.new_count}건 저장 (전체 ${r.total_found}건 중 ${filtered}건 비AI 제외, ${r.elapsed_seconds}초)`,
+                                'success'
+                            );
+                        } else if (data.last_result && data.last_result.status === 'error') {
+                            showToast('수집 중 오류 발생: ' + (data.last_result.message || ''), 'error');
+                        }
+
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                } catch (err) {
+                    console.error('Status poll error:', err);
+                }
+
+                // 20분 타임아웃
+                if (pollCount > 240) {
+                    clearInterval(interval);
+                    document.getElementById('loadingOverlay').classList.remove('active');
+                    showToast('수집 시간이 초과되었습니다.', 'error');
+
+                    const btn = document.getElementById('btnScrape');
+                    btn.disabled = false;
+                    btn.innerHTML = '수집 시작';
+                }
+            }, 5000);
+        }
+
+        // 3. 기사 조회 필터 적용
+        function applyFilter() {
+            const startD = document.getElementById('filterStartDate').value;
+            const endD = document.getElementById('filterEndDate').value;
+
+            if ((startD && !endD) || (!startD && endD)) {
+                showToast('필터 시작일과 종료일을 모두 입력하거나 비워두세요.', 'error');
+                return;
+            }
+
+            let url = '/';
+            if (startD && endD) {
+                url += `?start_date=${startD}&end_date=${endD}`;
+            }
+            location.href = url;
+        }
+
+        // 필터 리셋
+        function resetFilter() {
+            location.href = '/';
+        }
+
+        // 4. 엑셀 다운로드 (필터링 파라미터 연동)
+        function downloadExcel() {
+            const startD = document.getElementById('filterStartDate').value;
+            const endD = document.getElementById('filterEndDate').value;
+
+            let url = '/api/download';
+            if (startD && endD) {
+                url += `?start_date=${startD}&end_date=${endD}`;
+            }
+            window.location.href = url;
+        }
+
+        // 토스트 팝업 헬퍼
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.classList.add('show');
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 5000);
+        }
+
+        // 수집 중 상태인 경우 자동으로 폴링 가동
+        {% if is_scraping %}
+        document.getElementById('loadingOverlayText').innerText = '기사를 수집 중입니다...';
+        document.getElementById('loadingOverlay').classList.add('active');
+        document.getElementById('btnScrape').disabled = true;
+        document.getElementById('btnScrape').innerHTML = '⏳ 수집 중...';
+        pollStatus();
+        {% endif %}
+    </script>
+</body>
+</html>
