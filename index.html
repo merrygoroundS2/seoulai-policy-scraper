@@ -38,9 +38,34 @@
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Pulse animation for running state */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        .pulse-ring {
+            animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        /* Toast animation */
+        @keyframes slide-in {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-anim { animation: slide-in 0.3s ease-out; }
     </style>
 </head>
-<body class="bg-dark-100 text-slate-100 min-height-screen font-sans flex flex-col justify-between">
+<body class="bg-dark-100 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+    <!-- Toast Notification -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[100] flex flex-col gap-2"></div>
 
     <!-- Header -->
     <header class="bg-dark-200 border-b border-white/5 sticky top-0 z-50 backdrop-blur-md bg-opacity-80">
@@ -53,13 +78,88 @@
                     <span class="text-indigo-400 font-bold">AI 정책</span> 동향지 자동 스크랩
                 </h1>
             </div>
-            <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-3">
+                <!-- 수동 수집 버튼 -->
+                <button id="btnManualScrape" onclick="openScrapeModal()"
+                    class="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 active:scale-95 text-white text-xs font-semibold rounded-lg shadow-lg shadow-emerald-500/20 transition-all duration-200">
+                    <span>🔄 수동 수집</span>
+                </button>
+                <!-- 엑셀 다운로드 -->
                 <a id="btnDownload" href="output/articles_daily.xlsx" download class="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-accent-indigo to-accent-purple hover:from-indigo-500 hover:to-purple-600 active:scale-95 text-white text-xs font-semibold rounded-lg shadow-lg shadow-indigo-500/20 transition-all duration-200">
                     <span>📥 전체 엑셀 다운로드</span>
                 </a>
             </div>
         </div>
     </header>
+
+    <!-- Manual Scrape Modal -->
+    <div id="scrapeModal" class="fixed inset-0 z-[90] hidden items-center justify-center modal-backdrop">
+        <div class="bg-dark-200 border border-white/10 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative">
+            <button onclick="closeScrapeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">✕</button>
+
+            <!-- Modal: 방법 선택 -->
+            <div id="modalSelectMethod">
+                <h2 class="text-lg font-bold text-white mb-1">🔄 수동 기사 수집</h2>
+                <p class="text-xs text-slate-400 mb-6">원하는 수집 방법을 선택하세요</p>
+
+                <!-- 방법 1: GitHub Actions 수동 트리거 -->
+                <div class="bg-dark-300 border border-white/5 rounded-xl p-4 mb-4 hover:border-emerald-500/30 transition-all cursor-pointer group" onclick="triggerGitHubAction()">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-sm font-bold">⚡</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">GitHub Actions 수동 실행</h3>
+                            <p class="text-xs text-slate-500">서버에서 자동 수집 (권장)</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">GitHub Actions 페이지에서 "Run workflow" 버튼을 클릭하면 서버에서 수집이 실행되고, 완료 후 이 페이지가 자동으로 업데이트됩니다.</p>
+                </div>
+
+                <!-- 방법 2: 날짜 지정 수집 -->
+                <div class="bg-dark-300 border border-white/5 rounded-xl p-4 hover:border-indigo-500/30 transition-all cursor-pointer group" onclick="showDateInput()">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-sm font-bold">📅</div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-white group-hover:text-indigo-400 transition-colors">특정 날짜 수집</h3>
+                            <p class="text-xs text-slate-500">원하는 날짜를 지정하여 수집</p>
+                        </div>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">특정 날짜의 기사를 수집하고 싶을 때 사용하세요. GitHub Actions 페이지에서 날짜를 입력하고 실행합니다.</p>
+                </div>
+            </div>
+
+            <!-- Modal: 날짜 입력 -->
+            <div id="modalDateInput" class="hidden">
+                <button onclick="showMethodSelect()" class="text-xs text-slate-400 hover:text-white mb-3 flex items-center space-x-1 transition-colors">
+                    <span>←</span><span>뒤로</span>
+                </button>
+                <h2 class="text-lg font-bold text-white mb-1">📅 날짜 지정 수집</h2>
+                <p class="text-xs text-slate-400 mb-4">수집하고 싶은 날짜를 입력하세요</p>
+
+                <input type="date" id="manualDateInput"
+                    class="w-full bg-dark-300 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-indigo-500 transition-colors mb-4">
+
+                <button onclick="triggerGitHubActionWithDate()"
+                    class="w-full py-2.5 bg-gradient-to-r from-accent-indigo to-accent-purple hover:from-indigo-500 hover:to-purple-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-500/20 transition-all duration-200 active:scale-95">
+                    GitHub Actions에서 수집 실행 →
+                </button>
+            </div>
+
+            <!-- Modal: 실행 중 -->
+            <div id="modalRunning" class="hidden text-center py-6">
+                <div class="inline-block relative mb-4">
+                    <div class="w-12 h-12 border-3 border-t-emerald-500 border-white/10 rounded-full animate-spin"></div>
+                </div>
+                <h2 class="text-lg font-bold text-white mb-1">🚀 수집 요청 전송 완료!</h2>
+                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
+                    GitHub Actions 페이지가 새 탭에서 열립니다.<br>
+                    수집이 완료되면 이 페이지를 새로고침하면 결과를 볼 수 있습니다.
+                </p>
+                <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-dark-300 hover:bg-dark-400 border border-white/10 text-xs font-semibold rounded-lg text-slate-200 transition-all">
+                    🔄 페이지 새로고침
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Main Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
@@ -147,15 +247,90 @@
     <footer class="bg-dark-200 border-t border-white/5 py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500">
             &copy; 2026 AI 정책 기사 자동 스크랩 시스템. Powered by GitHub Pages.
+            <span class="mx-2">|</span>
+            <a href="https://github.com/merrygoroundS2/seoulai-policy-scraper/actions" target="_blank" class="hover:text-indigo-400 transition-colors">수집 실행 기록 보기</a>
         </div>
     </footer>
 
     <!-- JS Logic -->
     <script>
+        // ─── GitHub Actions URL ───
+        const GITHUB_ACTIONS_URL = 'https://github.com/merrygoroundS2/seoulai-policy-scraper/actions/workflows/daily_scrape.yml';
+
         let allArticles = [];
         let filteredArticles = [];
 
-        // Load data from output/articles.json
+        // ─── Toast notifications ───
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const colors = {
+                info: 'bg-indigo-500/90 border-indigo-400/30',
+                success: 'bg-emerald-500/90 border-emerald-400/30',
+                error: 'bg-rose-500/90 border-rose-400/30',
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast-anim ${colors[type]} border backdrop-blur-sm text-white text-xs font-medium px-4 py-2.5 rounded-lg shadow-lg`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ─── Scrape Modal ───
+        function openScrapeModal() {
+            document.getElementById('scrapeModal').classList.remove('hidden');
+            document.getElementById('scrapeModal').classList.add('flex');
+            showMethodSelect();
+        }
+
+        function closeScrapeModal() {
+            document.getElementById('scrapeModal').classList.add('hidden');
+            document.getElementById('scrapeModal').classList.remove('flex');
+        }
+
+        function showMethodSelect() {
+            document.getElementById('modalSelectMethod').classList.remove('hidden');
+            document.getElementById('modalDateInput').classList.add('hidden');
+            document.getElementById('modalRunning').classList.add('hidden');
+        }
+
+        function showDateInput() {
+            document.getElementById('modalSelectMethod').classList.add('hidden');
+            document.getElementById('modalDateInput').classList.remove('hidden');
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('manualDateInput').value = today;
+        }
+
+        function triggerGitHubAction() {
+            window.open(GITHUB_ACTIONS_URL, '_blank');
+            document.getElementById('modalSelectMethod').classList.add('hidden');
+            document.getElementById('modalRunning').classList.remove('hidden');
+            showToast('GitHub Actions 페이지가 열렸습니다. "Run workflow"를 클릭하세요.', 'info');
+        }
+
+        function triggerGitHubActionWithDate() {
+            const date = document.getElementById('manualDateInput').value;
+            if (!date) {
+                showToast('날짜를 선택해주세요.', 'error');
+                return;
+            }
+            window.open(GITHUB_ACTIONS_URL, '_blank');
+            document.getElementById('modalDateInput').classList.add('hidden');
+            document.getElementById('modalRunning').classList.remove('hidden');
+            showToast(`날짜 "${date}" 수집을 위해 GitHub Actions 페이지가 열렸습니다.`, 'info');
+        }
+
+        // ─── Close modal on backdrop click ───
+        document.addEventListener('click', (e) => {
+            const modal = document.getElementById('scrapeModal');
+            if (e.target === modal) closeScrapeModal();
+        });
+
+        // ─── Load data from output/articles.json ───
         window.addEventListener('DOMContentLoaded', async () => {
             try {
                 const response = await fetch('output/articles.json');

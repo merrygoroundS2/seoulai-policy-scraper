@@ -1,0 +1,86 @@
+# GitHub Actions — AI 정책 기사 자동 스크랩
+#
+# 매일 오전 8시(KST, UTC 23:00 전날)에 수집을 실행한다.
+# 수집 후 JSON + 엑셀 파일을 자동 커밋 → GitHub Pages 자동 갱신.
+
+name: Daily Article Scrape
+
+on:
+  schedule:
+    # UTC 23:00 = KST 08:00 (다음날)
+    - cron: '0 23 * * *'
+
+  # 수동 실행 가능 (GitHub Actions 탭에서 "Run workflow" 클릭)
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: '수집 대상 날짜 (YYYY-MM-DD, 빈칸이면 오늘)'
+        required: false
+        default: ''
+
+env:
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+          playwright install-deps
+
+      - name: Create .env
+        run: |
+          cat << EOF > .env
+          SEOULAI_LOGIN_ID=${{ secrets.SEOULAI_LOGIN_ID }}
+          SEOULAI_LOGIN_PW=${{ secrets.SEOULAI_LOGIN_PW }}
+          HEADLESS=true
+          TIMEZONE=Asia/Seoul
+          EOF
+
+      - name: Restore previous data
+        run: |
+          # 이전 엑셀/JSON 데이터가 이미 git에 있으므로 별도 restore 불필요
+          echo "기존 데이터 확인:"
+          ls -la output/ 2>/dev/null || echo "output/ 디렉토리 없음 - 새로 생성됩니다"
+
+      - name: Run Scrape
+        run: |
+          if [ -n "${{ github.event.inputs.target_date }}" ]; then
+            python scripts/run_scrape.py --date "${{ github.event.inputs.target_date }}"
+          else
+            python scripts/run_scrape.py
+          fi
+
+      - name: Upload Excel Artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: articles-${{ github.run_number }}
+          path: output/articles_daily.xlsx
+          retention-days: 90
+
+      - name: Commit and Push Updated Data
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f output/articles_daily.xlsx output/articles.json
+          git diff --cached --quiet && echo "No changes to commit" || {
+            git commit -m "🤖 자동 수집: $(TZ=Asia/Seoul date +'%Y-%m-%d %H:%M') KST"
+            git push origin main
+          }

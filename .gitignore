@@ -5,9 +5,9 @@
 auth/storage_state.json
 auth/*.json
 
-# 출력 파일
-output/*.xlsx
+# 출력 파일 (임시 파일만 제외, 최종 결과물은 GitHub Pages용으로 추적)
 output/*.xlsx.tmp
+output/*.xlsx.bak
 
 # 로그
 logs/*.log
