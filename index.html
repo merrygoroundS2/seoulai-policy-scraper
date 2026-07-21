@@ -590,7 +590,7 @@
         // ─── Load data from output/articles.json ───
         window.addEventListener('DOMContentLoaded', async () => {
             try {
-                const response = await fetch('output/articles.json');
+                const response = await fetch('output/articles.json?v=' + Date.now());
                 if (!response.ok) throw new Error('JSON load failed');
                 
                 allArticles = await response.json();
