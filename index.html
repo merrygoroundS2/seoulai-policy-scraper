@@ -97,25 +97,54 @@
         <div class="bg-dark-200 border border-white/10 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative">
             <button onclick="closeScrapeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">✕</button>
 
+            <!-- Modal: 깃허브 PAT 토큰 설정 (최초 1회 필요) -->
+            <div id="modalTokenSetup" class="hidden">
+                <h2 class="text-lg font-bold text-white mb-1">🔑 깃허브 인증 설정</h2>
+                <p class="text-xs text-slate-400 mb-4">웹사이트 내부에서 수집을 원격 지시하기 위해 깃허브 토큰이 필요합니다.</p>
+                
+                <div class="bg-dark-300 border border-white/5 rounded-lg p-3 mb-4 text-xs text-slate-300 leading-relaxed">
+                    <p class="font-semibold text-indigo-400 mb-1">💡 안전한 로컬 저장 안내</p>
+                    입력하신 토큰은 오직 사용자의 브라우저 메모리(localStorage)에만 저장되며, 외부 서버로 절대로 전송되지 않습니다.
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2" for="githubPatInput">GitHub Personal Access Token (PAT)</label>
+                    <input type="password" id="githubPatInput" placeholder="ghp_..."
+                        class="w-full bg-dark-300 border border-white/10 rounded-lg px-4 py-2 text-sm text-slate-200 outline-none focus:border-indigo-500 transition-colors">
+                </div>
+
+                <div class="flex items-center justify-between mb-4">
+                    <a href="https://github.com/settings/tokens/new?scopes=repo,workflow&description=SeoulAI-Policy-Scraper" target="_blank" 
+                        class="text-xs text-indigo-400 hover:text-indigo-300 hover:underline">
+                        🔗 10초 만에 토큰 발급받기 →
+                    </a>
+                </div>
+
+                <button onclick="saveGitHubToken()"
+                    class="w-full py-2.5 bg-gradient-to-r from-accent-indigo to-accent-purple hover:from-indigo-500 hover:to-purple-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-500/20 transition-all duration-200 active:scale-95">
+                    토큰 저장 및 시작하기
+                </button>
+            </div>
+
             <!-- Modal: 방법 선택 -->
             <div id="modalSelectMethod">
                 <h2 class="text-lg font-bold text-white mb-1">🔄 수동 기사 수집</h2>
                 <p class="text-xs text-slate-400 mb-6">원하는 수집 방법을 선택하세요</p>
 
-                <!-- 방법 1: GitHub Actions 수동 트리거 -->
-                <div class="bg-dark-300 border border-white/5 rounded-xl p-4 mb-4 hover:border-emerald-500/30 transition-all cursor-pointer group" onclick="triggerGitHubAction()">
+                <!-- 방법 1: 오늘 날짜 즉시 실행 -->
+                <div class="bg-dark-300 border border-white/5 rounded-xl p-4 mb-4 hover:border-emerald-500/30 transition-all cursor-pointer group" onclick="startWorkflowImmediate()">
                     <div class="flex items-center space-x-3 mb-2">
                         <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400 text-sm font-bold">⚡</div>
                         <div>
-                            <h3 class="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">GitHub Actions 수동 실행</h3>
-                            <p class="text-xs text-slate-500">서버에서 자동 수집 (권장)</p>
+                            <h3 class="text-sm font-semibold text-white group-hover:text-emerald-400 transition-colors">오늘 자 정책 기사 수집</h3>
+                            <p class="text-xs text-slate-500">바로 원격 수집 실행</p>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-400 leading-relaxed">GitHub Actions 페이지에서 "Run workflow" 버튼을 클릭하면 서버에서 수집이 실행되고, 완료 후 이 페이지가 자동으로 업데이트됩니다.</p>
+                    <p class="text-xs text-slate-400 leading-relaxed">오늘 새로 올라온 모든 정부 부처의 AI 관련 정책 기사를 자동으로 스크랩하고 정리합니다.</p>
                 </div>
 
                 <!-- 방법 2: 날짜 지정 수집 -->
-                <div class="bg-dark-300 border border-white/5 rounded-xl p-4 hover:border-indigo-500/30 transition-all cursor-pointer group" onclick="showDateInput()">
+                <div class="bg-dark-300 border border-white/5 rounded-xl p-4 mb-4 hover:border-indigo-500/30 transition-all cursor-pointer group" onclick="showDateInput()">
                     <div class="flex items-center space-x-3 mb-2">
                         <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 text-sm font-bold">📅</div>
                         <div>
@@ -123,7 +152,14 @@
                             <p class="text-xs text-slate-500">원하는 날짜를 지정하여 수집</p>
                         </div>
                     </div>
-                    <p class="text-xs text-slate-400 leading-relaxed">특정 날짜의 기사를 수집하고 싶을 때 사용하세요. GitHub Actions 페이지에서 날짜를 입력하고 실행합니다.</p>
+                    <p class="text-xs text-slate-400 leading-relaxed">원하는 특정 과거 날짜가 있는 경우 날짜를 지정해서 원격 수집을 진행할 수 있습니다.</p>
+                </div>
+
+                <!-- 토큰 재설정 버튼 -->
+                <div class="text-center pt-2 border-t border-white/5">
+                    <button onclick="resetGitHubToken()" class="text-xs text-slate-500 hover:text-rose-400 transition-colors">
+                        ⚙️ 인증 토큰(PAT) 초기화/재설정
+                    </button>
                 </div>
             </div>
 
@@ -138,25 +174,52 @@
                 <input type="date" id="manualDateInput"
                     class="w-full bg-dark-300 border border-white/10 rounded-lg px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-indigo-500 transition-colors mb-4">
 
-                <button onclick="triggerGitHubActionWithDate()"
+                <button onclick="startWorkflowWithDate()"
                     class="w-full py-2.5 bg-gradient-to-r from-accent-indigo to-accent-purple hover:from-indigo-500 hover:to-purple-600 text-white text-sm font-semibold rounded-lg shadow-lg shadow-indigo-500/20 transition-all duration-200 active:scale-95">
-                    GitHub Actions에서 수집 실행 →
+                    원격 지정 수집 실행
                 </button>
             </div>
 
-            <!-- Modal: 실행 중 -->
-            <div id="modalRunning" class="hidden text-center py-6">
+            <!-- Modal: 실행 및 진행률 모니터링 -->
+            <div id="modalRunning" class="hidden text-center py-4">
                 <div class="inline-block relative mb-4">
-                    <div class="w-12 h-12 border-3 border-t-emerald-500 border-white/10 rounded-full animate-spin"></div>
+                    <!-- Spinning main indicator -->
+                    <div class="w-16 h-16 border-4 border-t-emerald-500 border-white/10 rounded-full animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-lg">🤖</div>
                 </div>
-                <h2 class="text-lg font-bold text-white mb-1">🚀 수집 요청 전송 완료!</h2>
-                <p class="text-xs text-slate-400 mt-2 leading-relaxed">
-                    GitHub Actions 페이지가 새 탭에서 열립니다.<br>
-                    수집이 완료되면 이 페이지를 새로고침하면 결과를 볼 수 있습니다.
+                <h2 class="text-lg font-bold text-white mb-1" id="runningStatusTitle">수집 서버 준비 중</h2>
+                <p class="text-xs text-slate-400 mt-2 leading-relaxed" id="runningStatusDesc">
+                    깃허브 Actions 서버에 신호를 보내고 있습니다.<br>잠시만 기다려주세요.
                 </p>
-                <button onclick="location.reload()" class="mt-4 px-6 py-2 bg-dark-300 hover:bg-dark-400 border border-white/10 text-xs font-semibold rounded-lg text-slate-200 transition-all">
-                    🔄 페이지 새로고침
-                </button>
+
+                <!-- Status Steps list -->
+                <div class="mt-6 text-left bg-dark-300 border border-white/5 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between text-xs" id="step1">
+                        <span class="text-slate-300">1. 스크랩 서버 요청 전달</span>
+                        <span class="font-bold text-amber-400" id="step1_status">대기 중</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs" id="step2">
+                        <span class="text-slate-300">2. 깃허브 빌드 큐 대기</span>
+                        <span class="font-bold text-slate-500" id="step2_status">대기 중</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs" id="step3">
+                        <span class="text-slate-300">3. AI 기사 스크랩 및 분석 진행</span>
+                        <span class="font-bold text-slate-500" id="step3_status">대기 중</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs" id="step4">
+                        <span class="text-slate-300">4. 대시보드 데이터 배포 업데이트</span>
+                        <span class="font-bold text-slate-500" id="step4_status">대기 중</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 flex justify-center space-x-2">
+                    <a id="btnLinkToGithub" href="#" target="_blank" class="hidden px-4 py-2 bg-dark-300 hover:bg-dark-400 border border-white/10 text-xs font-semibold rounded-lg text-slate-300 transition-all">
+                        ⚙️ 상세 로그 보기
+                    </a>
+                    <button onclick="closeScrapeModal()" class="px-4 py-2 bg-transparent hover:bg-white/5 text-xs text-slate-500 hover:text-slate-300 transition-all">
+                        창 닫기
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -254,11 +317,14 @@
 
     <!-- JS Logic -->
     <script>
-        // ─── GitHub Actions URL ───
-        const GITHUB_ACTIONS_URL = 'https://github.com/merrygoroundS2/seoulai-policy-scraper/actions/workflows/daily_scrape.yml';
+        // ─── GitHub API Config ───
+        const OWNER = 'merrygoroundS2';
+        const REPO = 'seoulai-policy-scraper';
+        const WORKFLOW_FILE = 'daily_scrape.yml';
 
         let allArticles = [];
         let filteredArticles = [];
+        let monitorIntervalId = null;
 
         // ─── Toast notifications ───
         function showToast(message, type = 'info') {
@@ -279,49 +345,206 @@
             }, 4000);
         }
 
-        // ─── Scrape Modal ───
+        // ─── Token Handling ───
+        function getGitHubToken() {
+            return localStorage.getItem('gh_pat_token');
+        }
+
+        function saveGitHubToken() {
+            const token = document.getElementById('githubPatInput').value.trim();
+            if (!token) {
+                showToast('토큰 값을 입력해주세요.', 'error');
+                return;
+            }
+            localStorage.setItem('gh_pat_token', token);
+            showToast('깃허브 토큰이 안전하게 저장되었습니다.', 'success');
+            showMethodSelect();
+        }
+
+        function resetGitHubToken() {
+            localStorage.removeItem('gh_pat_token');
+            showToast('저장된 토큰이 삭제되었습니다.', 'info');
+            showTokenSetup();
+        }
+
+        // ─── Scrape Modal View Controls ───
         function openScrapeModal() {
             document.getElementById('scrapeModal').classList.remove('hidden');
             document.getElementById('scrapeModal').classList.add('flex');
-            showMethodSelect();
+            
+            const token = getGitHubToken();
+            if (!token) {
+                showTokenSetup();
+            } else {
+                showMethodSelect();
+            }
         }
 
         function closeScrapeModal() {
             document.getElementById('scrapeModal').classList.add('hidden');
             document.getElementById('scrapeModal').classList.remove('flex');
+            if (monitorIntervalId) {
+                clearInterval(monitorIntervalId);
+                monitorIntervalId = null;
+            }
+        }
+
+        function showTokenSetup() {
+            document.getElementById('modalTokenSetup').classList.remove('hidden');
+            document.getElementById('modalSelectMethod').classList.add('hidden');
+            document.getElementById('modalDateInput').classList.add('hidden');
+            document.getElementById('modalRunning').classList.add('hidden');
         }
 
         function showMethodSelect() {
+            document.getElementById('modalTokenSetup').classList.add('hidden');
             document.getElementById('modalSelectMethod').classList.remove('hidden');
             document.getElementById('modalDateInput').classList.add('hidden');
             document.getElementById('modalRunning').classList.add('hidden');
         }
 
         function showDateInput() {
+            document.getElementById('modalTokenSetup').classList.add('hidden');
             document.getElementById('modalSelectMethod').classList.add('hidden');
             document.getElementById('modalDateInput').classList.remove('hidden');
+            document.getElementById('modalRunning').classList.add('hidden');
             // Set default date to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('manualDateInput').value = today;
         }
 
-        function triggerGitHubAction() {
-            window.open(GITHUB_ACTIONS_URL, '_blank');
-            document.getElementById('modalSelectMethod').classList.add('hidden');
-            document.getElementById('modalRunning').classList.remove('hidden');
-            showToast('GitHub Actions 페이지가 열렸습니다. "Run workflow"를 클릭하세요.', 'info');
+
+        // ─── Trigger Workflow via API ───
+        async function startWorkflowImmediate() {
+            await triggerWorkflowDispatch('');
         }
 
-        function triggerGitHubActionWithDate() {
+        async function startWorkflowWithDate() {
             const date = document.getElementById('manualDateInput').value;
             if (!date) {
-                showToast('날짜를 선택해주세요.', 'error');
+                showToast('날짜를 지정해 주세요.', 'error');
                 return;
             }
-            window.open(GITHUB_ACTIONS_URL, '_blank');
-            document.getElementById('modalDateInput').classList.add('hidden');
-            document.getElementById('modalRunning').classList.remove('hidden');
-            showToast(`날짜 "${date}" 수집을 위해 GitHub Actions 페이지가 열렸습니다.`, 'info');
+            await triggerWorkflowDispatch(date);
+        }
+
+        async function triggerWorkflowDispatch(targetDate) {
+            const token = getGitHubToken();
+            if (!token) {
+                showToast('인증 토큰이 없습니다.', 'error');
+                showTokenSetup();
+                return;
+            }
+
+            showRunningScreen();
+
+            const url = `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Accept': 'application/vnd.github+json',
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        ref: 'main',
+                        inputs: {
+                            target_date: targetDate
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || `HTTP ${response.status}`);
+                }
+
+                updateStepStyle('step1', 'success', '성공');
+                updateStepStyle('step2', 'progress', '진행 중');
+                showToast('수집 서버 실행 명령 전달 성공!', 'success');
+                
+                // Start polling workflow runs
+                monitorWorkflow(targetDate);
+
+            } catch (err) {
+                console.error(err);
+                updateStepStyle('step1', 'error', '실패');
+                document.getElementById('runningStatusTitle').textContent = '⚠️ 실행 실패';
+                document.getElementById('runningStatusDesc').innerHTML = `오류 발생: <span class="text-rose-400">${err.message}</span><br>토큰 유효성 및 권한(workflow 권한 포함)을 확인해 주세요.`;
+                showToast(`수동 수집 실행 오류: ${err.message}`, 'error');
+            }
+        }
+
+        // ─── Poll Workflow Runs ───
+        function monitorWorkflow(targetDate) {
+            const token = getGitHubToken();
+            const url = `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs?workflow_id=${WORKFLOW_FILE}&limit=5`;
+            const startTime = Date.now();
+            let matchedRunId = null;
+
+            if (monitorIntervalId) clearInterval(monitorIntervalId);
+
+            monitorIntervalId = setInterval(async () => {
+                try {
+                    const response = await fetch(url, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    const runs = data.workflow_runs || [];
+
+                    // Find the run started after we triggered it
+                    const currentRun = runs.find(run => {
+                        const runCreatedAt = new Date(run.created_at).getTime();
+                        return runCreatedAt > startTime - 30000; // Triggered around the last 30s
+                    });
+
+                    if (currentRun) {
+                        matchedRunId = currentRun.id;
+                        const logBtn = document.getElementById('btnLinkToGithub');
+                        logBtn.href = currentRun.html_url;
+                        logBtn.classList.remove('hidden');
+
+                        const status = currentRun.status; // queued, in_progress, completed
+                        const conclusion = currentRun.conclusion; // success, failure, etc.
+
+                        if (status === 'queued') {
+                            document.getElementById('runningStatusTitle').textContent = '⏳ 빌드 대기 중';
+                            document.getElementById('runningStatusDesc').textContent = '수집 가상환경 서버가 대기열에서 차례를 기다리고 있습니다.';
+                            updateStepStyle('step2', 'progress', '대기열 진입');
+                        } else if (status === 'in_progress') {
+                            document.getElementById('runningStatusTitle').textContent = '⚙️ 기사 스크랩 및 분석 중';
+                            document.getElementById('runningStatusDesc').textContent = '서버에서 실시간 포털 정보를 크롤링하고 AI 핵심 기사를 분류하고 있습니다.';
+                            updateStepStyle('step2', 'success', '완료');
+                            updateStepStyle('step3', 'progress', '진행 중');
+                        } else if (status === 'completed') {
+                            clearInterval(monitorIntervalId);
+                            monitorIntervalId = null;
+
+                            if (conclusion === 'success') {
+                                document.getElementById('runningStatusTitle').textContent = '🎉 수집 및 분석 성공!';
+                                document.getElementById('runningStatusDesc').textContent = '데이터가 성공적으로 반영되었습니다. 페이지를 새로고침합니다.';
+                                updateStepStyle('step3', 'success', '성공');
+                                updateStepStyle('step4', 'success', '업데이트 완료');
+                                showToast('모든 정책 기사 스크랩이 성공했습니다!', 'success');
+                                
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 3000);
+                            } else {
+                                document.getElementById('runningStatusTitle').textContent = '⚠️ 수집 오류 발생';
+                                document.getElementById('runningStatusDesc').textContent = `수집 단계 오류로 인해 작업이 중단되었습니다. (결과: ${conclusion})`;
+                                updateStepStyle('step3', 'error', '실패');
+                                showToast(`수집 실패: ${conclusion}`, 'error');
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Polling error:', e);
+                }
+            }, 5000);
         }
 
         // ─── Close modal on backdrop click ───
