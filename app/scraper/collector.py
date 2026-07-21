@@ -234,28 +234,7 @@ async def _load_filtered_list(
     logger.info("JS 코드를 통해 필터 및 날짜 설정 주입")
     await page.evaluate(f"""
         () => {{
-            // 1. 분야 '전체' 체크 해제
-            const checkAll = document.getElementById('check_all');
-            if (checkAll && checkAll.checked) {{
-                checkAll.checked = false;
-            }}
-
-            // 2. '정부부처·청·위원회' 체크박스 체크 및 상태 변경
-            const cb = document.getElementById('hmpg_nm_mi_3');
-            if (cb) {{
-                cb.checked = true;
-                if (typeof hmpgNmSearchOptionChange === 'function') {{
-                    hmpgNmSearchOptionChange(cb, 'MI');
-                }}
-            }}
-
-            // 3. 기간 '전체' 체크 해제
-            const dateAll = document.getElementById('check2_1');
-            if (dateAll && dateAll.checked) {{
-                dateAll.checked = false;
-            }}
-
-            // 4. 날짜 설정 및 jQuery change 이벤트 트리거
+            // 1. 날짜 설정 및 jQuery change 이벤트 트리거 (가장 먼저 실행하여 search() 자동 트리거에 대응)
             const startInput = document.getElementById('wrt_bgng_ymd');
             const endInput = document.getElementById('wrt_end_ymd');
             if (startInput && endInput) {{
@@ -267,7 +246,31 @@ async def _load_filtered_list(
                 }}
             }}
 
-            // 5. 검색 실행
+            // 2. 기간 '전체' 체크 해제
+            const dateAll = document.getElementById('check2_1');
+            if (dateAll && dateAll.checked) {{
+                dateAll.checked = false;
+                if (window.jQuery) {{
+                    window.jQuery(dateAll).trigger('change');
+                }}
+            }}
+
+            // 3. 분야 '전체' 체크 해제
+            const checkAll = document.getElementById('check_all');
+            if (checkAll && checkAll.checked) {{
+                checkAll.checked = false;
+            }}
+
+            // 4. '정부부처·청·위원회' 체크박스 체크 및 상태 변경 (이 단계에서 내부 search()가 날짜 필터를 안고 자동 실행됨)
+            const cb = document.getElementById('hmpg_nm_mi_3');
+            if (cb) {{
+                cb.checked = true;
+                if (typeof hmpgNmSearchOptionChange === 'function') {{
+                    hmpgNmSearchOptionChange(cb, 'MI');
+                }}
+            }}
+
+            // 5. 만약 위 로직에서 search()가 정상 트리거 안 되었을 경우를 대비한 안전 장치
             if (typeof search === 'function') {{
                 search();
             }}
