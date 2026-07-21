@@ -411,6 +411,8 @@
             // Set default date to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('manualDateInput').value = today;
+        }
+
         function showRunningScreen() {
             document.getElementById('modalTokenSetup').classList.add('hidden');
             document.getElementById('modalSelectMethod').classList.add('hidden');
