@@ -472,6 +472,23 @@
 
             showRunningScreen();
 
+            // ─── [보완] 트리거 전 현재 가장 최신 Run ID 확인 ───
+            let latestRunIdBefore = null;
+            try {
+                const getLatestUrl = `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs?workflow_id=${WORKFLOW_FILE}&limit=1`;
+                const latestRes = await fetch(getLatestUrl, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (latestRes.ok) {
+                    const latestData = await latestRes.json();
+                    if (latestData.workflow_runs && latestData.workflow_runs[0]) {
+                        latestRunIdBefore = latestData.workflow_runs[0].id;
+                    }
+                }
+            } catch (err) {
+                console.warn('이전 Run ID 확인 실패 (진행은 계속함):', err);
+            }
+
             const url = `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
             try {
                 const response = await fetch(url, {
@@ -498,8 +515,8 @@
                 updateStepStyle('step2', 'progress', '진행 중');
                 showToast('수집 서버 실행 명령 전달 성공!', 'success');
                 
-                // Start polling workflow runs
-                monitorWorkflow(targetDate);
+                // Start polling workflow runs with our known baseline Run ID
+                monitorWorkflow(targetDate, latestRunIdBefore);
 
             } catch (err) {
                 console.error(err);
@@ -511,10 +528,9 @@
         }
 
         // ─── Poll Workflow Runs ───
-        function monitorWorkflow(targetDate) {
+        function monitorWorkflow(targetDate, latestRunIdBefore) {
             const token = getGitHubToken();
             const url = `https://api.github.com/repos/${OWNER}/${REPO}/actions/runs?workflow_id=${WORKFLOW_FILE}&limit=5`;
-            const startTime = Date.now();
             let matchedRunId = null;
 
             if (monitorIntervalId) clearInterval(monitorIntervalId);
@@ -529,10 +545,14 @@
                     const data = await response.json();
                     const runs = data.workflow_runs || [];
 
-                    // Find the run started after we triggered it
+                    // [보완] 이전 최종 Run ID보다 새로 생성된 Run만 식별하도록 ID 기반 검사
                     const currentRun = runs.find(run => {
+                        if (latestRunIdBefore) {
+                            return run.id > latestRunIdBefore;
+                        }
+                        // baseline이 없으면 기존처럼 시간 비교를 차선책으로 적용
                         const runCreatedAt = new Date(run.created_at).getTime();
-                        return runCreatedAt > startTime - 30000; // Triggered around the last 30s
+                        return runCreatedAt > Date.now() - 60000;
                     });
 
                     if (currentRun) {
