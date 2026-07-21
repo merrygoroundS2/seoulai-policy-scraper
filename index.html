@@ -411,8 +411,40 @@
             // Set default date to today
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('manualDateInput').value = today;
+        function showRunningScreen() {
+            document.getElementById('modalTokenSetup').classList.add('hidden');
+            document.getElementById('modalSelectMethod').classList.add('hidden');
+            document.getElementById('modalDateInput').classList.add('hidden');
+            document.getElementById('modalRunning').classList.remove('hidden');
+            
+            // Reset steps styling
+            updateStepStyle('step1', 'progress', '진행 중');
+            updateStepStyle('step2', 'wait', '대기 중');
+            updateStepStyle('step3', 'wait', '대기 중');
+            updateStepStyle('step4', 'wait', '대기 중');
         }
 
+        function updateStepStyle(stepId, state, text) {
+            const stepEl = document.getElementById(stepId);
+            const statusEl = document.getElementById(stepId + '_status');
+            if (!stepEl || !statusEl) return;
+
+            statusEl.textContent = text;
+            
+            if (state === 'wait') {
+                statusEl.className = 'font-bold text-slate-500';
+                stepEl.className = 'flex items-center justify-between text-xs opacity-50';
+            } else if (state === 'progress') {
+                statusEl.className = 'font-bold text-amber-400 animate-pulse';
+                stepEl.className = 'flex items-center justify-between text-xs opacity-100 font-semibold';
+            } else if (state === 'success') {
+                statusEl.className = 'font-bold text-emerald-400';
+                stepEl.className = 'flex items-center justify-between text-xs opacity-100';
+            } else if (state === 'error') {
+                statusEl.className = 'font-bold text-rose-500';
+                stepEl.className = 'flex items-center justify-between text-xs opacity-100 font-bold';
+            }
+        }
 
         // ─── Trigger Workflow via API ───
         async function startWorkflowImmediate() {
