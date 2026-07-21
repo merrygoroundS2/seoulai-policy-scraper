@@ -30,6 +30,7 @@ from app.scraper.auth import AuthManager
 from app.scraper.parser import fetch_article_body
 from app.scraper.cleaner import (
     is_ai_related_title,
+    is_central_government,
     extract_keywords,
     calculate_ai_relevance,
     generate_summary_placeholder,
@@ -127,6 +128,13 @@ async def run_collection(
             # ── 1단계: 제목 기반 AI 필터링 ──
             if not is_ai_related_title(title):
                 logger.debug(f"  [{idx}] AI 무관(제목): {title[:40]}")
+                result.filtered_out_title += 1
+                continue
+
+            # ── [추가] 중앙행정기관(정부부처·청·위원회) 필터링 ──
+            org = article_data.get("organization", "")
+            if not is_central_government(org):
+                logger.info(f"  [{idx}] 정부부처 아님 스킵 ({org}): {title[:40]}")
                 result.filtered_out_title += 1
                 continue
 

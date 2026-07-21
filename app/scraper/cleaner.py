@@ -101,7 +101,7 @@ NOISE_PATTERNS = [
 def is_ai_related_title(title: str) -> bool:
     """제목에 핵심 AI 키워드가 포함되어 있는지 확인한다.
 
-    1단계 필터링: 핵심 키워드(AI_CORE_KEYWORDS)만 사용하여
+    1단계 필터링: 핵심 키워(AI_CORE_KEYWORDS)만 사용하여
     "데이터", "개인정보" 등 범용어로 인한 오탐을 방지한다.
     """
     if not title:
@@ -111,6 +111,42 @@ def is_ai_related_title(title: str) -> bool:
     for keyword in AI_CORE_KEYWORDS:
         if keyword.lower() in title_lower:
             return True
+    return False
+
+
+def is_central_government(org_name: str) -> bool:
+    """기관명이 중앙행정기관(정부부처·청·위원회)에 해당하는지 판별한다.
+
+    지방자치단체(도, 시, 구 등), 연구기관/진흥원(STEPI, SPRI, NIA 등),
+    해외기관(OECD, 미국 등)에서 업로드된 자료를 2차적으로 필터링하여 걸러낸다.
+    """
+    if not org_name:
+        return False
+
+    org_name = org_name.strip()
+
+    # 1. 중앙행정기관의 변형 명칭 또는 핵심 부처 예외 리스트
+    central_exceptions = [
+        "국무조정실", "국무총리비서실", "감사원", "대통령실", "방위사업청", "문화재청",
+        "국가유산청", "재정경제부", "산업통상부", "방송미디어통신위원회", "국가기후위기대응위원회",
+        "지식재산처", "기후에너지환경부", "우주항공청"
+    ]
+    if any(exception in org_name for exception in central_exceptions):
+        return True
+
+    # 2. 지자체(도청, 시청 등), 산하 연구/진흥기관 및 해외기관을 지시하는 단어 차단
+    block_words = [
+        "특별시", "광역시", "자치시", "자치도", "도청", "시청", "군청", "구청", "교육청",
+        "연구소", "연구원", "진흥원", "평가원", "센터", "협회", "공사", "공단", "재단",
+        "테크노파크", "대학", "학교", "학회", "의회", "연구회", "소방본부", "보건소"
+    ]
+    if any(word in org_name for word in block_words):
+        return False
+
+    # 3. 중앙 부처/처/청/위원회 어미 확인
+    if org_name.endswith("부") or org_name.endswith("처") or org_name.endswith("청") or org_name.endswith("위원회"):
+        return True
+
     return False
 
 
